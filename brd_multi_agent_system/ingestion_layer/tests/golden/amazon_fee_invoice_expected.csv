@@ -1,0 +1,7 @@
+invoice_no,invoice_date,expense_type,ledger,taxable_value,gst_rate,cgst,sgst,igst,total_value
+AMZ-FEE-001,2025-08-20,Closing Fee,Amazon Closing Fee,1000,18,90,90,0,1180
+AMZ-FEE-001,2025-08-20,Shipping Fee,Amazon Shipping Fee,2000,18,180,180,0,2360
+AMZ-FEE-002,2025-08-21,Commission,Amazon Commission,5000,18,450,450,0,5900
+AMZ-FEE-002,2025-08-21,Fulfillment Fee,Amazon Fulfillment Fee,1500,18,135,135,0,1770
+AMZ-FEE-003,2025-08-22,Storage Fee,Amazon Storage Fee,800,18,72,72,0,944
+AMZ-FEE-003,2025-08-22,Advertising Fee,Amazon Advertising Fee,3000,18,270,270,0,3540

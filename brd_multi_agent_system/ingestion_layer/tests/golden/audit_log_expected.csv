@@ -1,0 +1,9 @@
+run_id,actor,action,entity_type,details
+RUN-001,system,ingest_start,file,"{""file"":""amazon_mtr_aug.csv"",""channel"":""amazon"",""gstin"":""06ABGCS4796R1ZA""}"
+RUN-001,system,ingest_complete,file,"{""records_processed"":698,""storage_path"":""normalized/amazon_mtr_123.csv""}"
+RUN-001,system,mapping_complete,record,"{""mapping_type"":""item"",""records_processed"":698,""mappings_resolved"":590,""mappings_pending"":108}"
+RUN-001,system,tax_compute_complete,tax_computation,"{""records"":698,""total_tax_amount"":53490.93,""channel"":""amazon""}"
+RUN-001,system,invoice_generated,invoice,"{""invoices_generated"":698,""pattern"":""AMZHR202508""}"
+RUN-001,system,export_complete,export,"{""export_type"":""x2beta"",""file"":""amazon_mtr_18pct_x2beta.xlsx"",""records_exported"":698}"
+RUN-001,finance,approval_granted,approval,"{""sku"":""XYZ123"",""fg"":""Product A"",""approver"":""finance_user""}"
+RUN-001,system,mis_generated,mis_report,"{""channel"":""amazon"",""gstin"":""06ABGCS4796R1ZA"",""month"":""2025-08""}"

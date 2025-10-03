@@ -1,0 +1,4 @@
+invoice_date,type,order_id,sku,asin,quantity,taxable_value,gst_rate,state_code,channel,gstin,month,fg,item_resolved,ledger_name,ledger_resolved,shipping_value,cgst,sgst,igst,total_tax,total_amount,invoice_no,returned_qty,net_qty
+2025-06-01 10:00:00,SALE,PF001,PEPP-PROD-001,,2,1000.0,0.18,KARNATAKA,pepperfry,06ABGCS4796R1ZA,2025-08,Furniture Item 1,True,Pepperfry Sales - KA,True,0.0,90.0,90.0,0.0,180.0,1180.0,PEPP-KA-08-0001,0,2
+2025-06-01 11:00:00,RETURN,PF001,PEPP-PROD-001,,1,500.0,0.18,KARNATAKA,pepperfry,06ABGCS4796R1ZA,2025-08,Furniture Item 1,True,Pepperfry Sales - KA,True,0.0,45.0,45.0,0.0,90.0,590.0,PEPP-KA-08-0002,1,1
+2025-06-01 12:00:00,SALE,PF002,PEPP-PROD-002,,1,1500.0,0.18,DELHI,pepperfry,06ABGCS4796R1ZA,2025-08,Furniture Item 2,True,Pepperfry Sales - DL,True,0.0,0.0,0.0,270.0,270.0,1770.0,PEPP-DL-08-0001,0,1

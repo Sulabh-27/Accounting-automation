@@ -1,0 +1,5 @@
+request_type,payload,status,priority,auto_approve_eligible
+item_mapping,"{""sku"":""XYZ123"",""asin"":""B08N5WRWNW"",""channel"":""amazon"",""final_goods_name"":null}",pending,medium,true
+ledger_mapping,"{""channel"":""amazon"",""state_code"":""DL"",""ledger_name"":null}",pending,medium,true
+gst_rate_override,"{""current_rate"":0.18,""proposed_rate"":0.12,""reason"":""Product category change""}",pending,high,false
+invoice_override,"{""invoice_no"":""AMZHR202508001"",""override_type"":""format_fix"",""reason"":""Incorrect format""}",approved,low,true

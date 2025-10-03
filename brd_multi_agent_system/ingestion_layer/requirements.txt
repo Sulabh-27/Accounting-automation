@@ -1,0 +1,6 @@
+supabase>=2.5.1
+pandas>=2.2.2
+python-dotenv>=1.0.1
+requests>=2.32.3
+openpyxl>=3.1.5
+pydantic>=1.10,<2

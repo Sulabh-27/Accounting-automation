@@ -1,0 +1,4 @@
+gstin,month,gst_rate,ledger,fg,state_code,total_quantity,total_taxable,total_cgst,total_sgst,total_igst
+06ABGCS4796R1ZA,2025-08,0.18,Flipkart Karnataka,Sample Product A,KARNATAKA,10,5000.0,0.0,0.0,900.0
+06ABGCS4796R1ZA,2025-08,0.18,Flipkart Haryana,Sample Product B,HARYANA,5,2500.0,225.0,225.0,0.0
+06ABGCS4796R1ZA,2025-08,0.12,Flipkart Delhi,Sample Product C,DELHI,8,4000.0,0.0,0.0,480.0

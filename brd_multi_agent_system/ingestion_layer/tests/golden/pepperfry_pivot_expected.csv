@@ -1,0 +1,4 @@
+gstin,month,gst_rate,ledger,fg,total_quantity,total_taxable,total_cgst,total_sgst,total_igst
+06ABGCS4796R1ZA,2025-08,0.18,Pepperfry Maharashtra,Sample Furniture A,15,7500.0,0.0,0.0,1350.0
+06ABGCS4796R1ZA,2025-08,0.18,Pepperfry Haryana,Sample Furniture B,8,4000.0,360.0,360.0,0.0
+06ABGCS4796R1ZA,2025-08,0.28,Pepperfry Karnataka,Sample Furniture C,5,2500.0,0.0,0.0,700.0

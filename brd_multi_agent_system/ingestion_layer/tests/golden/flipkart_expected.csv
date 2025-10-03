@@ -1,0 +1,4 @@
+invoice_date,type,order_id,sku,asin,quantity,taxable_value,gst_rate,state_code,channel,gstin,month,fg,item_resolved,ledger_name,ledger_resolved,shipping_value,cgst,sgst,igst,total_tax,total_amount,invoice_no
+2025-06-01 10:00:00,,FK001,FLIP-PROD-001,,1,500.0,0.18,KARNATAKA,flipkart,06ABGCS4796R1ZA,2025-08,Sample Product 1,True,Flipkart Sales - KA,True,0.0,45.0,45.0,0.0,90.0,590.0,FLIP-KA-08-0001
+2025-06-01 11:00:00,,FK002,FLIP-PROD-002,,2,1000.0,0.18,DELHI,flipkart,06ABGCS4796R1ZA,2025-08,Sample Product 2,True,Flipkart Sales - DL,True,0.0,0.0,0.0,180.0,180.0,1180.0,FLIP-DL-08-0001
+2025-06-01 12:00:00,,FK003,FLIP-PROD-003,,1,750.0,0.12,MAHARASHTRA,flipkart,06ABGCS4796R1ZA,2025-08,Sample Product 3,True,Flipkart Sales - MH,True,0.0,0.0,0.0,90.0,90.0,840.0,FLIP-MH-08-0001
