@@ -1,332 +1,265 @@
-BRD Multi-Agent Accounting Automation System
+# BRD Multi-Agent Accounting Automation System
+
 An end-to-end multi-agent system designed to ingest, process, validate, transform, and export e-commerce transactional data across multiple marketplaces (Amazon MTR/STR, Flipkart, Pepperfry) into standardized accounting formats (X2Beta Excel schema, Tally XML/Excel, Supabase database, and MIS reports).
 
-Architecture Overview
+---
+
+## 🎯 Business Context & Core Purpose
+
+E-commerce businesses operating across multi-channel marketplaces (Amazon India, Flipkart, Pepperfry, etc.) encounter massive volumes of transactional data daily. Each platform provides reports with varying schemas, tax column definitions, and fee structures.
+
+Manual accounting and GST filing for these platforms leads to:
+
+- **Tax Mismatches** — incorrect split between intra-state (CGST + SGST) and inter-state (IGST) taxes.
+- **Complex Commission Reconciliation** — marketplace fee structures (fulfillment fees, seller fees, referral fees) mapped to the wrong ledgers.
+- **Format Incompatibility** — target accounting platforms like Tally or X2Beta require rigid, GSTIN-specific Excel/XML templates.
+
+This system automates the entire ingestion-to-export lifecycle, acting as an intelligent bridge between raw marketplace reports and corporate accounting ledgers.
+
+---
+
+## 🏗️ Architecture Overview
+
 The system follows a modular, agent-based ingestion pipeline. Data flows sequentially through specialized agents and utility libraries to ensure strict tax calculation accuracy, schema compliance, item/ledger resolution, and exception handling.
 
-                    ┌─────────────────────────┐
-                    │ Raw Marketplace Inputs  │
-                    │ (Amazon MTR/STR, etc.)  │
-                    └────────────┬────────────┘
-                                 │
-                                 ▼
-                    ┌─────────────────────────┐
-                    │    Ingestion Layer      │
-                    │  (Universal & Marketplace│
-                    │        Agents)          │
-                    └────────────┬────────────┘
-                                 │
-                                 ▼
-                    ┌─────────────────────────┐
-                    │    Tax Engine & Item    │
-                    │    Master Resolver      │
-                    └────────────┬────────────┘
-                                 │
-                                 ▼
-                    ┌─────────────────────────┐
-                    │    Pivoter & Schema     │
-                    │       Validator         │
-                    └────────────┬────────────┘
-                                 │
-                   ┌─────────────┴─────────────┐
-                   ▼                           ▼
-      ┌─────────────────────────┐ ┌─────────────────────────┐
-      │   Approval & Exception  │ │ Output Exporters        │
-      │        Workflow         │ │ (X2Beta, Tally, MIS,    │
-      │   (CLI & Streamlit)     │ │    Database Storage)    │
-      └─────────────────────────┘ └─────────────────────────┘
-Key System Components
-1. Ingestion Layer (/ingestion_layer)
-Universal Agent (universal_agent.py): Generic ingestion gateway that inspects incoming file formats and routes them to platform-specific agents.
+```
+                ┌─────────────────────────┐
+                │  Raw Marketplace Inputs  │
+                │  (Amazon MTR/STR, etc.)  │
+                └────────────┬─────────────┘
+                              │
+                              ▼
+                ┌─────────────────────────┐
+                │      Ingestion Layer     │
+                │ (Universal & Marketplace │
+                │         Agents)          │
+                └────────────┬─────────────┘
+                              │
+                              ▼
+                ┌─────────────────────────┐
+                │  Tax Engine & Item       │
+                │  Master Resolver         │
+                └────────────┬─────────────┘
+                              │
+                              ▼
+                ┌─────────────────────────┐
+                │  Pivoter & Schema        │
+                │  Validator               │
+                └────────────┬─────────────┘
+                              │
+               ┌──────────────┴──────────────┐
+               ▼                             ▼
+  ┌─────────────────────────┐   ┌─────────────────────────┐
+  │  Approval & Exception    │   │   Output Exporters       │
+  │  Workflow                │   │  (X2Beta, Tally, MIS,    │
+  │  (CLI & Streamlit)       │   │   Database Storage)      │
+  └─────────────────────────┘   └─────────────────────────┘
+```
 
-Platform Agents:
+### Detailed Agent-Level Flow
 
-amazon_mtr_agent.py: Handles Amazon Merchant Tax Report (MTR) B2B/B2C transactions.
+```
+                ┌────────────────────────────────┐
+                │      Raw Marketplace Input      │
+                │   (Amazon MTR/STR, Flipkart)    │
+                └────────────────┬─────────────────┘
+                                  ▼
+                ┌────────────────────────────────┐
+                │         Universal Agent          │
+                └────────────────┬─────────────────┘
+                                  │
+               ┌──────────────────┴──────────────────┐
+               ▼                                      ▼
+┌───────────────────────────────┐   ┌───────────────────────────────┐
+│      Marketplace Agents        │   │     Seller Invoice Parser      │
+│  (Amazon, Flipkart, etc.)      │   │  (Non-marketplace Purchases)   │
+└────────────────┬───────────────┘   └────────────────┬───────────────┘
+                  │                                    │
+                  └──────────────────┬─────────────────┘
+                                      ▼
+                     ┌────────────────────────────────┐
+                     │         Batch Splitter           │
+                     └────────────────┬─────────────────┘
+                                       ▼
+                     ┌────────────────────────────────┐
+                     │  Item Master Resolver &          │
+                     │  Tax Engine                      │
+                     └────────────────┬─────────────────┘
+                                       ▼
+                     ┌────────────────────────────────┐
+                     │  Pivoter & Ledger/               │
+                     │  Expense Mappers                 │
+                     └────────────────┬─────────────────┘
+                                       ▼
+                     ┌────────────────────────────────┐
+                     │  Approval Workflow &             │
+                     │  Exception Handler                │
+                     └────────────────┬─────────────────┘
+                                       │
+                ┌──────────────────────┼──────────────────────┐
+                ▼                      ▼                      ▼
+  ┌─────────────────────┐   ┌─────────────────┐   ┌─────────────────────────┐
+  │    X2Beta Writer      │   │  Tally Exporter  │   │  Supabase & MIS Engine   │
+  │ (GSTIN Sales/Expense   │   │  (XML / Excel)   │   │  (DB Storage &            │
+  │        Excel)          │   │                   │   │   Dashboards)             │
+  └─────────────────────┘   └─────────────────┘   └─────────────────────────┘
+```
 
-amazon_str_agent.py: Processes Amazon Summary Tax Reports (STR).
+---
 
-flipkart_agent.py: Parses Flipkart sales, returns, and fee statements.
+## 🔑 Key System Components
 
-pepperfry_agent.py: Manages Pepperfry order and remittance data.
+### Ingestion Layer (`/ingestion_layer`)
 
-Seller Invoice Parser (seller_invoice_parser.py): Parses non-marketplace purchase and expense invoices.
+- **Universal Agent** (`universal_agent.py`) — Acts as a smart router. Inspects incoming file headers/metadata to identify the platform source and delegates processing to dedicated platform agents.
+- **Platform Agents**:
+  - `amazon_mtr_agent.py` — Handles Amazon Merchant Tax Report (MTR) B2B/B2C transactions.
+  - `amazon_str_agent.py` — Processes Amazon Summary Tax Reports (STR).
+  - `flipkart_agent.py` — Parses Flipkart sales, returns, and fee statements.
+  - `pepperfry_agent.py` — Manages Pepperfry order and remittance data.
+- **Seller Invoice Parser** (`seller_invoice_parser.py`) — Reads direct purchase/expense documents from external vendors (non-marketplace invoices).
 
-2. Processing & Business Logic Agents
-Batch Splitter (batch_splitter.py): Splits large input datasets into processing batches grouped by GSTIN and tax rates (e.g., 0%, 18%).
+### Processing & Business Logic Agents
 
-Item Master Resolver (item_master_resolver.py): Maps raw product SKUs and descriptions to master item codes and standard unit measures.
+- **Batch Splitter** (`batch_splitter.py`) — Divides large transactional files into smaller processing batches, categorized by Seller GSTIN and GST tax rate slabs (e.g., 0%, 18%). This isolation ensures tax computations match target filing templates.
+- **Item Master Resolver** (`item_master_resolver.py`) — Cross-references raw marketplace SKUs and descriptions against master item listings (`Item Master - Sample.xlsx`) to retrieve unified internal item codes, standardized units of measure (UOM), and baseline tax classifications.
+- **Tax Engine** (`tax_engine.py`) — Enforces Indian GST logic:
+  - Evaluates State of Origin vs. Place of Supply.
+  - Determines local intra-state sales (CGST + SGST) vs. inter-state sales (IGST).
+  - Calculates taxable values, tax components, and invoice totals.
+- **Pivoter** (`pivoter.py`) — Converts line-item transactional rows into aggregated voucher-level summaries required for accounting ledger entries.
+- **Ledger / Expense Mapper** (`ledger_mapper.py`, `expense_mapper.py`) — Maps marketplace fee types (commission, storage, advertising, shipping) to the appropriate accounting chart-of-accounts ledgers.
 
-Tax Engine (tax_engine.py): Computes intra-state (CGST + SGST) vs. inter-state (IGST) tax breakdowns based on place of supply and GST rates.
+### Exporters & Integrations
 
-Pivoter (pivoter.py): Aggregates batch line items into summarized tax and sales voucher structures required by target systems.
+- **X2Beta Writer** (`libs/x2beta_writer.py`) — Dynamically writes pivoted sales and expense batches into pre-built, GSTIN-specific X2Beta Excel templates (`templates/X2Beta Sales Template - *.xlsx`).
+- **Tally Exporter** (`tally_exporter.py`, `expense_tally_exporter.py`) — Converts mapped transactions into Tally-compatible XML/Excel formats for seamless import into Tally ERP/Prime.
+- **MIS Generator** (`mis_generator.py`) — Compiles executive summary reports: gross sales, return deductions, net tax liabilities, and marketplace fee deductions.
+- **Supabase Client** (`libs/supabase_client.py`) — Manages real-time database persistence, batch status tracking, and audit logging into Cloud PostgreSQL tables.
 
-Ledger / Expense Mapper (ledger_mapper.py, expense_mapper.py): Maps marketplace fee types, commission structures, and shipping fees to appropriate accounting chart-of-accounts ledgers.
+### Governance & Human-in-the-Loop
 
-3. Exporters & Integrations
-X2Beta Writer (libs/x2beta_writer.py): Generates structured Excel files strictly matching the GSTIN-specific X2Beta sales and expense templates.
+- **Approval Workflow** (`approval_workflow.py`, `approval_cli.py`) — Enforces validation gates before final export or database commit; batches stay pending until a human accountant reviews key figures.
+- **Exception Handler** (`exception_handler.py`) — Routes unmapped SKUs, missing tax rates, or schema mismatches to an isolated queue for manual resolution, preventing pipeline crashes.
+- **Audit Logger** (`audit_logger.py`) — Maintains trace logs for every state transition (Ingested → Split → Normalized → Approved → Exported) with timestamps, for full compliance traceability.
+- **Streamlit Application** (`/streamlit_app`) — Dashboard UI providing:
+  - Pipeline execution control
+  - Analytics (revenue, tax liabilities, fee charts)
+  - Exception management (resolve unmapped SKUs / tax errors)
+  - Master data & settings (SKU maps, ledgers, DB connections)
 
-Tally Exporter (tally_exporter.py, expense_tally_exporter.py): Converts mapped transactions into Tally-compatible XML/Excel formats.
+---
 
-MIS Generator (mis_generator.py): Compiles executive summary reports and financial metrics.
+## 🔄 Complete Step-by-Step Data Flow
 
-Supabase Client (libs/supabase_client.py): Manages real-time database persistence, batch status tracking, and audit logging.
+```
+[Raw Report Input]
+        │
+        ▼
+1. Universal Agent inspects file & assigns platform agent
+        │
+        ▼
+2. Batch Splitter breaks data down by GSTIN and GST rate slabs
+        │
+        ▼
+3. Item Master Resolver matches SKUs with master data
+        │
+        ▼
+4. Tax Engine calculates intra-state (CGST+SGST) or inter-state (IGST) split
+        │
+        ▼
+5. Ledger Mapper classifies marketplace fees to chart-of-accounts
+        │
+        ▼
+6. Pivoter groups rows into invoice/voucher-level summaries
+        │
+        ▼
+7. Exception Handler catches invalid rows; Approval Workflow gates the batch
+        │
+        ▼
+8. Exporters output files to X2Beta Excel, Tally XML, MIS CSV, and Supabase DB
+```
 
-4. Governance & Human-in-the-Loop
-Approval Workflow (approval_workflow.py, approval_cli.py): Enforces validation gates before final export or database commit.
+### Workflow Execution Steps (summary)
 
-Exception Handler (exception_handler.py): Routes unmapped SKUs, missing tax rates, or schema mismatches to an isolated queue for manual resolution.
+| Step | Stage | Description |
+|------|-------|-------------|
+| 1 | **Batch Ingestion** | Raw CSV/Excel reports (e.g., Amazon MTR CSVs) are placed in `ingestion_layer/data/batches/`. `batch_splitter.py` segments records by seller GSTIN and tax slabs. |
+| 2 | **Parsing & Normalization** | The designated marketplace agent normalizes raw fields into a standardized schema contract (`libs/contracts.py`). |
+| 3 | **Master Resolution & Tax Computation** | SKUs are matched against the Item Master. The Tax Engine validates states, handles zero-rated vs. taxable items, and assigns CGST, SGST, or IGST. |
+| 4 | **Pivoting & Template Writing** | `pivoter.py` organizes rows into voucher-level summaries; `x2beta_writer.py` populates pre-formatted GSTIN Excel templates. |
+| 5 | **Approval & Exception Review** | Transactions with missing ledgers or invalid GSTINs are sent to `exception_handler.py`. Users review/resolve via the Streamlit UI (`04_Exceptions.py`) or CLI (`approval_cli.py`). |
+| 6 | **Export & Persistence** | Approved batches are exported to Excel (`exports/`), converted to Tally XML, or inserted into Supabase (`insert_to_supabase_direct.py`). |
 
-Audit Logger (audit_logger.py): Maintains trace logs for every state transition and pipeline step.
+---
 
-Streamlit Application (/streamlit_app): Dashboard UI providing visual controls for pipeline execution, analytics, exception management, master data maintenance, and Tally export monitoring.
+## 🗄️ Database & Schema Design (`complete_schema.sql`)
 
-Workflow Execution Steps
-[Raw Files] ──> 1. Batch Splitting ──> 2. Parsing & Mapping ──> 3. Tax Calculation 
-                 ──> 4. Pivot Summarization ──> 5. Approval Gate ──> 6. Export Generation
-Batch Ingestion:
-Raw CSV or Excel reports (e.g., Amazon MTR CSV files) are placed in the ingestion batch directory (ingestion_layer/data/batches/). batch_splitter.py segments records by seller GSTIN and tax slabs.
+The system relies on relational tables in Supabase/PostgreSQL to manage pipeline state and reporting:
 
-Parsing & Normalization:
-The designated marketplace agent normalizes raw fields into a standardized schema contract (libs/contracts.py).
+- **`batch_runs`** — Batch-level execution metadata, status (`PENDING`, `APPROVED`, `REJECTED`), source marketplace, and batch parameters.
+- **`normalized_transactions`** — Standardized transaction line items post-parsing.
+- **`item_master` & `ledger_master`** — Reference tables for SKU mappings and ledger classifications.
+- **`approval_queue`** — Queue for human-in-the-loop review.
+- **`audit_logs`** — Detailed operational logging for compliance and troubleshooting.
 
-Master Resolution & Tax Computation:
-SKUs are matched against the Item Master (Item Master - Sample.xlsx). The tax_engine validates states, handles zero-rated vs. taxable items, and assigns CGST, SGST, or IGST.
+---
 
-Pivoting & Template Writing:
-pivoter.py organizes rows into voucher-level summaries. x2beta_writer.py populates pre-formatted GSTIN Excel templates.
+## 📂 Directory Structure
 
-Approval & Exception Review:
-Transactions with missing ledgers or invalid GSTINs are sent to exception_handler.py. Users can review and resolve exceptions via the Streamlit UI (04_Exceptions.py) or CLI (approval_cli.py).
-
-Export & Persistence:
-Approved batches are exported to Excel (exports/), converted to Tally XML, or inserted into Supabase (insert_to_supabase_direct.py).
-
-Directory Structure Overview
+```
 brd_multi_agent_system/
-├── complete_schema.sql             # Full database DDL for Supabase
-├── create_golden_x2beta.py         # Test data and golden template generation
-├── final_pipeline_demo.py          # End-to-end demo script
-├── run_complete_pipeline_fixed.py  # Master pipeline execution script
-├── ingestion_layer/                # Core processing core
-│   ├── agents/                     # Micro-agents (Amazon, Tax, Pivoter, Tally, etc.)
-│   ├── data/                       # Raw, batch, normalized, and master sample datasets
-│   ├── exports/                    # Generated output files (MIS, X2Beta Excel)
-│   ├── libs/                       # Shared utilities (Tax rules, Excel writers, Supabase)
-│   ├── sql/                        # Schema migration scripts by pipeline part
-│   ├── templates/                  # Blank X2Beta Sales & Expense templates per GSTIN
-│   └── tests/                      # Unit tests & golden file validations
-└── streamlit_app/                  # Web dashboard UI
-    ├── app.py                      # Streamlit main entry point
-    └── pages/                      # Dashboard views (Pipeline, Analytics, Exceptions, etc.)
-Setup & Execution
-Prerequisites
-Python 3.10+
+├── complete_schema.sql              # Full database DDL for Supabase
+├── create_golden_x2beta.py          # Test data and golden template generation
+├── final_pipeline_demo.py           # End-to-end demo script
+├── run_complete_pipeline_fixed.py   # Master pipeline execution script
+├── ingestion_layer/                 # Core processing core
+│   ├── agents/                      # Micro-agents (Amazon, Tax, Pivoter, Tally, etc.)
+│   ├── data/                        # Raw, batch, normalized, and master sample datasets
+│   ├── exports/                     # Generated output files (MIS, X2Beta Excel)
+│   ├── libs/                        # Shared utilities (Tax rules, Excel writers, Supabase)
+│   ├── sql/                         # Schema migration scripts by pipeline part
+│   ├── templates/                   # Blank X2Beta Sales & Expense templates per GSTIN
+│   └── tests/                       # Unit tests & golden file validations
+└── streamlit_app/                   # Web dashboard UI
+    ├── app.py                       # Streamlit main entry point
+    └── pages/                       # Dashboard views (Pipeline, Analytics, Exceptions, etc.)
+```
 
-Virtual Environment (recommended)
+---
 
-Environment Configuration
-Copy .env.template to .env and configure your credentials:
+## ⚙️ Setup & Execution
 
-Bash
+### Prerequisites
+
+- Python 3.10+
+- Virtual environment (recommended)
+
+### Environment Configuration
+
+Copy `.env.template` to `.env` and configure your credentials:
+
+```bash
 SUPABASE_URL=your_supabase_url
 SUPABASE_KEY=your_supabase_key
-Dependency Installation
-Bash
+```
+
+### Dependency Installation
+
+```bash
 pip install -r ingestion_layer/requirements.txt
 pip install -r streamlit_app/requirements.txt
-Running the End-to-End Pipeline
-To run the full end-to-end automated processing pipeline:
+```
 
-Bash
+### Running the End-to-End Pipeline
+
+```bash
 python run_complete_pipeline_fixed.py
-Launching the Dashboard UI
-To launch the interactive management interface:
+```
 
-Bash
+### Launching the Dashboard UI
+
+```bash
 cd streamlit_app
 streamlit run app.py
-provide more explantion about the project
-
-Here is an extended breakdown of the project, expanding on its business context, deep-dive component responsibilities, end-to-end data pipeline, and multi-agent design principles.  
-ZIP
-
-🎯 Business Context & Core Purpose
-E-commerce businesses operating across multi-channel marketplaces (such as Amazon India, Flipkart, and Pepperfry) encounter massive volumes of transactional data daily. Each platform provides reports with varying schemas, tax column definitions, and fee structures.  
-ZIP
-+ 1
-
-Manual accounting and GST filing for these platforms lead to:
-
-Tax Mismatches: Incorrect split between intra-state (CGST + SGST) and inter-state (IGST) taxes.
-
-Complex Commission Reconciliation: Marketplace fee structures (fulfillment fees, seller fees, referral fees) mapped to wrong ledgers.  
-ZIP
-
-Format Incompatibility: Target accounting platforms like Tally or X2Beta require very rigid, GSTIN-specific Excel/XML templates.  
-ZIP
-
-This BRD Multi-Agent System automates the entire ingestion-to-export lifecycle, acting as an intelligent bridge between raw marketplace reports and corporate accounting ledgers.  
-ZIP
-
-🛠️ Detailed Architecture & Agent Responsibilities
-                               ┌────────────────────────────────┐
-                               │     Raw Marketplace Input      │
-                               │   (Amazon MTR/STR, Flipkart)   │
-                               └───────────────┬────────────────┘
-                                               │
-                                               ▼
-                               ┌────────────────────────────────┐
-                               │       Universal Agent          │
-                               └───────────────┬────────────────┘
-                                               │
-                       ┌───────────────────────┴───────────────────────┐
-                       ▼                                               ▼
-       ┌───────────────────────────────┐               ┌───────────────────────────────┐
-       │     Marketplace Agents        │               │     Seller Invoice Parser     │
-       │   (Amazon, Flipkart, etc.)    │               │  (Non-marketplace Purchases)  │
-       └───────────────┬───────────────┘               └───────────────┬───────────────┘
-                       │                                               │
-                       └───────────────────────┬───────────────────────┘
-                                               │
-                                               ▼
-                               ┌────────────────────────────────┐
-                               │         Batch Splitter         │
-                               └───────────────┬────────────────┘
-                                               │
-                                               ▼
-                               ┌────────────────────────────────┐
-                               │     Item Master Resolver &     │
-                               │           Tax Engine           │
-                               └───────────────┬────────────────┘
-                                               │
-                                               ▼
-                               ┌────────────────────────────────┐
-                               │      Pivoter & Ledger/         │
-                               │        Expense Mappers         │
-                               └───────────────┬────────────────┘
-                                               │
-                                               ▼
-                               ┌────────────────────────────────┐
-                               │      Approval Workflow &       │
-                               │       Exception Handler        │
-                               └───────────────┬────────────────┘
-                                               │
-                       ┌───────────────────────┼───────────────────────┐
-                       ▼                       ▼                       ▼
-        ┌─────────────────────────────┐ ┌─────────────┐ ┌─────────────────────────────┐
-        │        X2Beta Writer        │ │Tally Exporter│ │   Supabase & MIS Engine    │
-        │(GSTIN Sales/Expense Excel)  │ │(XML / Excel)│ │  (DB Storage & Dashboards)  │
-        └─────────────────────────────┘ └─────────────┘ └─────────────────────────────┘
-1. Ingestion Layer
-Universal Agent (universal_agent.py): Acts as a smart router. It inspects file headers/metadata to identify the platform source and delegates processing to dedicated platform agents.  
-ZIP
-+ 1
-
-Platform Agents (amazon_mtr_agent.py, amazon_str_agent.py, flipkart_agent.py, pepperfry_agent.py): Each platform agent contains specialized parsing rules to ingest raw marketplace files (including B2B and B2C reports), extract financial attributes, and normalize them into standard data contracts.  
-ZIP
-
-Seller Invoice Parser (seller_invoice_parser.py): Reads direct purchase/expense documents from external vendors.  
-ZIP
-
-2. Processing & Business Logic Layer
-Batch Splitter (batch_splitter.py): Divides massive transactional files into smaller processing batches categorized by Seller GSTIN and GST Tax Rate Slabs (e.g., 0%, 18%). This isolation ensures that tax computations match target filing templates perfectly.  
-ZIP
-+ 1
-
-Item Master Resolver (item_master_resolver.py): Cross-references raw marketplace SKUs and descriptions against master item listings (Item Master Sample.xlsx) to retrieve unified internal item codes, standardized units of measure (UOM), and baseline tax classifications.  
-ZIP
-
-Tax Engine (tax_engine.py): Enforces Indian GST logic:
-
-Evaluates State of Origin vs. Place of Supply.  
-ZIP
-
-Determines local intra-state sales (CGST+SGST) versus inter-state sales (IGST).  
-ZIP
-
-Calculates taxable values, tax components, and invoice totals accurately.  
-ZIP
-
-Pivoter (pivoter.py): Converts line-item transactional rows into aggregated voucher-level summaries required for accounting ledger entries.  
-ZIP
-
-Ledger & Expense Mapper (ledger_mapper.py, expense_mapper.py): Maps marketplace fees (e.g., storage fees, advertising costs, technology commission) to corresponding expense ledgers in the corporate chart of accounts.  
-ZIP
-
-3. Exporters & System Integrations
-X2Beta Writer (x2beta_writer.py): Dynamically writes pivoted sales and expense batches into pre-built GSTIN-specific X2Beta Excel templates (templates/X2Beta Sales Template - *.xlsx).  
-ZIP
-
-Tally Exporter (tally_exporter.py, expense_tally_exporter.py): Generates Tally XML files/Excel sheets formatted for seamless import into Tally ERP/Prime.  
-ZIP
-
-MIS Generator (mis_generator.py): Compiles executive summaries detailing gross sales, return deductions, net tax liabilities, and marketplace fee deductions.  
-ZIP
-
-Supabase Database (libs/supabase_client.py): Stores processed batches, audit trails, and execution states into Cloud PostgreSQL tables defined in complete_schema.sql.  
-ZIP
-
-4. Human-in-the-Loop & System Governance
-Approval Workflow (approval_workflow.py, approval_cli.py): Enforces validation checkpoints. Batches remain in a pending state until human accountants review key figures.  
-ZIP
-+ 1
-
-Exception Handler (exception_handler.py): Isolates problematic rows—such as unmapped SKUs, missing seller GSTINs, or invalid tax rates—into a separate queue, preventing pipeline crashes while allowing manual remediation.  
-ZIP
-
-Audit Logger (audit_logger.py): Tracks every action and state change (Ingested → Split → Normalized → Approved → Exported) with timestamps for full compliance traceability.  
-ZIP
-
-Streamlit App (/streamlit_app): An interactive Web UI providing:
-
-Pipeline Execution Control: Run workflows visually.  
-ZIP
-
-Analytics: Revenue, tax liabilities, and fee charts.  
-ZIP
-
-Exception Management: Resolve unmapped SKUs or tax errors.  
-ZIP
-
-Master Data & Settings: Manage SKU maps, ledgers, and database connections.  
-ZIP
-
-🔄 Complete Step-by-Step Data Flow
-[Raw Report Input] 
-      │
-      ▼
-1. Universal Agent inspects file & assigns platform agent.
-      │
-      ▼
-2. Batch Splitter breaks data down by GSTIN and GST Rate Slabs.
-      │
-      ▼
-3. Item Master Resolver matches SKUs with Master Data.
-      │
-      ▼
-4. Tax Engine calculates intra-state (CGST+SGST) or inter-state (IGST) split.
-      │
-      ▼
-5. Ledger Mapper classifies marketplace fees to chart-of-accounts.
-      │
-      ▼
-6. Pivoter groups rows into invoice/voucher-level summaries.
-      │
-      ▼
-7. Exception Handler catches invalid rows; Approval Workflow gates batch[cite: 1].
-      │
-      ▼
-8. Exporters output files to X2Beta Excel, Tally XML, MIS CSV, and Supabase DB[cite: 1].
-🗄️ Database & Schema Design (complete_schema.sql)
-The system relies on relational tables in Supabase/PostgreSQL to manage pipeline state and reporting[cite: 1]:
-
-batch_runs: Stores batch-level execution metadata, status (PENDING, APPROVED, REJECTED), source marketplace, and batch parameters[cite: 1].
-
-normalized_transactions: Stores standardized transaction line items post-parsing[cite: 1].
-
-item_master & ledger_master: Reference tables for SKU mappings and ledger classifications[cite: 1].
-
-approval_queue: Queue for human-in-the-loop review[cite: 1].
-
-audit_logs: Detailed operational logging for compliance and troubleshooting[cite: 1].
-
+```
